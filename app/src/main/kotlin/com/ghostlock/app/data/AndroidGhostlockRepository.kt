@@ -887,6 +887,13 @@ class AndroidGhostlockRepository(context: Context) : GhostlockRepository {
             val binary = File(appContext.applicationInfo.nativeLibraryDir, binaryName)
             require(binary.isFile) { "missing native binary: ${binary.absolutePath}" }
             if (prepareKsud(workDir, onLog) != null) onLog("<k> ksud ready") else onLog("<k> warning: ksud not found")
+            runCatching {
+                val lkmRelease = System.getProperty("os.version", "").orEmpty()
+                val lkmLabel = LkmImageProvisioner.provision(appContext, lkmRelease)
+                val lkmFile = LkmImageProvisioner.targetFile(workDir)
+                val lkmSize = if (lkmFile.isFile) lkmFile.length() else -1L
+                onLog("<k> lkm diag: release=$lkmRelease label=${lkmLabel ?: "none"} path=${lkmFile.absolutePath} exists=${lkmFile.isFile} size=$lkmSize")
+            }.onFailure { onLog("<k> lkm diag failed: ${it.message}") }
             // U01-S14: a per-run KernelSU log path so a previous run's markers
             // can never satisfy the handoff probe; passed to the native process.
             val ksuLog = File(workDir, ksuLogName(System.currentTimeMillis()))
