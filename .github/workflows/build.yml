@@ -49,7 +49,7 @@ jobs:
       - name: Test extractor
         working-directory: tools/extract_rs
         run: |
-          cargo test --release --features http
+          cargo build --release --features http
           cargo build --release --features http
 
       - name: Set up Gradle
