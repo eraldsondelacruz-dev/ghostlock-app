@@ -173,12 +173,7 @@ android {
     }
 }
 
-androidComponents {
-    onVariants(selector().withBuildType("release")) {
-        it.packaging.resources.excludes
-            .add("**")
-    }
-}
+
 
 base {
     archivesName.set("$appName-v$appVersionName($gitVersionCode)")
