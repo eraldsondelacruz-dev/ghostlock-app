@@ -232,6 +232,10 @@ int main(int argc, char **argv) {
          * destroys the state on every exit path. The borrowed plugin host rides
          * the same bind so the residency window can dispatch POST_TERMINAL. */
         if (selection.backend == contract::BackendKind::Cve2026_43284) {
+                        if (config::runtime_config_snapshot().init() != 0) {
+                pr_error("cve_2026_43284 runtime configuration failed\n");
+                throw FatalError{};
+            }
             const std::uint8_t bind_error = production.bind(
                     session, decoded, options.allow_dev_target, nullptr);
             if (bind_error != 0U) {
