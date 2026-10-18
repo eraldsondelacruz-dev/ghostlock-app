@@ -12,6 +12,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import com.ghostlock.app.data.AndroidGhostlockRepository
+import com.ghostlock.app.data.LkmImageProvisioner
 import com.ghostlock.app.domain.repository.GhostlockRepository
 import java.io.File
 import java.io.PrintWriter
@@ -38,6 +39,8 @@ class GhostlockApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         CrashDiag.mark("Application.onCreate done")
+        val lkmLabel = LkmImageProvisioner.provision(this, System.getProperty("os.version", "").orEmpty())
+        CrashDiag.mark("lkm helper.ko: " + (lkmLabel ?: "no image for this release"))
         registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
                 CrashDiag.mark("Activity.created ${activity.javaClass.name}")
