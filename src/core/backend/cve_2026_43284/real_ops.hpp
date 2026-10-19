@@ -125,13 +125,6 @@ namespace ghostlock::backend::cve_2026_43284 {
          * the composition root sets it from the profile's
          * execution.selinux_exec_context token (0 = vendor_modprobe, 1 = init).
          * The pointee must outlive the chain (a static constant). */
-        const char *hook_path = nullptr;
-
-        /* SELinux context the libc++ hook shellcode asks for before exec'ing
-         * the module loader. Null keeps the upstream default (vendor_modprobe);
-         * the composition root sets it from the profile's
-         * execution.selinux_exec_context token (0 = vendor_modprobe, 1 = init).
-         * The pointee must outlive the chain (a static constant). */
         const char *hook_selinux_context = nullptr;
 
         /* libc++ hook: caller-owned image, shellcode template and buffers, plus
