@@ -282,8 +282,11 @@ namespace ghostlock::backend::cve_2026_43284::steps {
         bool relocation_overlaps(const std::uint8_t *data, std::size_t size,
                                  const ElfImage &image, std::uint64_t vaddr,
                                  std::uint64_t length) noexcept {
+            if (image.has_android_rela &&
+                android_rela_overlaps(data, size, image.android_rela, vaddr, length)) {
+                return true;
+            }
             const ElfRange tables[2] = {image.rela_dyn, image.rela_plt};
-            const bool present[2] = {image.has_rela_dyn, image.has_rela_plt};
             for (std::size_t t = 0U; t < 2U; ++t) {
                 if (!present[t]) {
                     continue;
