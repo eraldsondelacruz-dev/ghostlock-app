@@ -520,11 +520,19 @@ namespace ghostlock::backend::cve_2026_43284::steps {
                     return false;
                 }
                 out.has_dynstr = true;
-            } else if (name == ".rela.dyn") {
-                if (!section_range(data, size, header, out.rela_dyn, error)) {
-                    return false;
+                        } else if (name == ".rela.dyn") {
+                if (header.type == kElfSectionAndroidRel ||
+                    header.type == kElfSectionAndroidRela) {
+                    if (!section_range(data, size, header, out.android_rela, error)) {
+                        return false;
+                    }
+                    out.has_android_rela = true;
+                } else {
+                    if (!section_range(data, size, header, out.rela_dyn, error)) {
+                        return false;
+                    }
+                    out.has_rela_dyn = true;
                 }
-                out.has_rela_dyn = true;
             } else if (name == ".rela.plt") {
                 if (!section_range(data, size, header, out.rela_plt, error)) {
                     return false;
