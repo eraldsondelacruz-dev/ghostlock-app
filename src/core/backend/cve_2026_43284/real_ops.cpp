@@ -345,6 +345,17 @@ namespace ghostlock::backend::cve_2026_43284 {
         ctx->hook_applied = true;
         const bool applied =
                 steps::apply_hook_patch(ctx->hook_plan, ctx->hook_io, error);
+        if (!applied) {
+            (void)std::fprintf(stderr,
+                               "run.43284 hook apply err=%u hoff=0x%llx poff=0x%llx bytes=%zu\n",
+                               static_cast<unsigned>(error),
+                               static_cast<unsigned long long>(
+                                       ctx->hook_plan.hook.hook_file_offset),
+                               static_cast<unsigned long long>(
+                                       ctx->hook_plan.hook.shellcode_file_offset),
+                               ctx->hook_plan.shellcode_size);
+            (void)std::fflush(stderr);
+        }
         ctx->page.next_seq = ctx->hook_page.next_seq;
         return applied ? steps::ChainError::None : steps::ChainError::HookFailed;
     }
