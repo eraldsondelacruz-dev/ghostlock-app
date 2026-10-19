@@ -44,6 +44,11 @@ namespace ghostlock::backend::cve_2026_43284::steps {
     inline constexpr std::uint32_t kElfFlagAlloc = 0x2U;
     inline constexpr std::uint32_t kElfFlagExecInstr = 0x4U;
     inline constexpr std::uint16_t kElfSectionUndef = 0U;
+    /* Android .rela.dyn ships either standard RELA records or a packed
+     * LEB128 stream (SHT_ANDROID_REL/SHT_ANDROID_RELA, "APS2"). */
+    inline constexpr std::uint32_t kElfSectionAndroidRel = 0x60000001U;
+    inline constexpr std::uint32_t kElfSectionAndroidRela = 0x60000002U;
+
 
     /* AArch64 prologue-guard instructions the upstream parser special-cases. */
     inline constexpr std::uint32_t kAarch64Paciasp = 0xD503233FU;
@@ -102,13 +107,17 @@ namespace ghostlock::backend::cve_2026_43284::steps {
         ElfRange text{};      /* .text */
         ElfRange dynsym{};    /* .dynsym */
         ElfRange dynstr{};    /* .dynstr */
-        ElfRange rela_dyn{};  /* .rela.dyn */
+        ElfRange rela_dyn{};  /* .rela.dyn (standard RELA records) */
         ElfRange rela_plt{};  /* .rela.plt */
+        /* .rela.dyn packed as an Android LEB128 stream ("APS2"); decoded by
+         * the relocation-overlap check instead of walked as RELA records. */
+        ElfRange android_rela{};
         bool has_text = false;
         bool has_dynsym = false;
         bool has_dynstr = false;
         bool has_rela_dyn = false;
         bool has_rela_plt = false;
+        bool has_android_rela = false;
 
         /* Executable PT_LOAD chosen to host the hook payload. file_offset/size
          * are p_offset/p_filesz; vaddr is p_vaddr; exec_memsz is p_memsz;
