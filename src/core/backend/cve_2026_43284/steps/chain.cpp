@@ -325,7 +325,18 @@ namespace {
                         rollback_journal(ops, workspace, result);
                         return ApplyOutcome::Failed;
                     }
-                    if (!bytes_equal(back.data(), desired, kChainBlockBytes)) {
+                                        bool verified = bytes_equal(back.data(), desired, kChainBlockBytes);
+                    /* The in-place ESP write can lag a fast read-back; rewrite
+                     * and re-read a bounded number of times before failing. */
+                    for (std::uint32_t attempt = 0U;
+                         !verified && attempt < kChainVerifyAttempts; ++attempt) {
+                        if (ops.write.write16(ops.write.ctx, offset, desired) != 0) break;
+                        back.fill(0U);
+                        if (ops.read_block(ops.write.ctx, offset, back.data()) !=
+                                static_cast<long>(kChainBlockBytes)) break;
+                        verified = bytes_equal(back.data(), desired, kChainBlockBytes);
+                    }
+                    if (!verified) {
                         result.error = ChainError::VerifyMismatch;
                         fail_block(ChainError::VerifyMismatch, ri, b, offset);
                         rollback_journal(ops, workspace, result);
