@@ -92,6 +92,7 @@ namespace {
     using ghostlock::backend::cve_2026_43284::steps::ChainWaitOutcome;
     using ghostlock::backend::cve_2026_43284::steps::ChainWorkspace;
     using ghostlock::backend::cve_2026_43284::steps::kChainBlockBytes;
+    using ghostlock::backend::cve_2026_43284::steps::kChainVerifyAttempts;
     using ghostlock::backend::cve_2026_43284::steps::PatchPlan;
     using ghostlock::backend::cve_2026_43284::steps::PatchRegion;
     using ghostlock::backend::cve_2026_43284::steps::valid_carrier_path;
