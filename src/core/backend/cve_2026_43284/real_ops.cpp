@@ -315,7 +315,28 @@ namespace ghostlock::backend::cve_2026_43284 {
                                     binding_count, displaced_slot,
                                     ctx->hook_shellcode, ctx->hook_shellcode_cap,
                                     ctx->hook_shellcode_orig, ctx->hook_io,
-                                    ctx->hook_plan, error)) {
+                                                                        ctx->hook_plan, error)) {
+            steps::ElfImage e{};
+            steps::HookTarget t{};
+            steps::ElfError ee = steps::ElfError::None;
+            steps::ElfError le = steps::ElfError::None;
+            const bool p = steps::parse_elf_image(
+                    ctx->libcxx_image, ctx->libcxx_image_size, e, ee);
+            const bool l =
+                    p && steps::locate_hook_target(
+                                 ctx->libcxx_image, ctx->libcxx_image_size, e,
+                                 symbol, ctx->hook_guard, t, le);
+            (void)std::fprintf(
+                    stderr,
+                    "run.43284 hook plan err=%u parse=%u loc=%u ok=%d pmax=%llu ho=0x%llx g=0x%x gskip=%d seg=%llu mem=%llu\n",
+                    static_cast<unsigned>(error), static_cast<unsigned>(ee),
+                    static_cast<unsigned>(le), l ? 1 : 0,
+                    static_cast<unsigned long long>(t.payload_max_bytes),
+                    static_cast<unsigned long long>(t.hook_file_offset),
+                    t.guard_instruction, t.guard_skipped ? 1 : 0,
+                    static_cast<unsigned long long>(e.exec_segment.size),
+                    static_cast<unsigned long long>(e.exec_memsz));
+            (void)std::fflush(stderr);
             return steps::ChainError::HookFailed;
         }
         /* The plan holds the saved original bytes: arm the restore before the
