@@ -197,6 +197,85 @@ namespace ghostlock::backend::cve_2026_43284::steps {
             return false;
         }
 
+                /* Android packed relocation stream (SHT_ANDROID_REL/RELA, "APS2"):
+         * LEB128 groups that delta-encode relocation targets. Android 16 ships
+         * .rela.dyn in this form, so the RELA-record walk below would see a
+         * non-multiple-of-24 section and fail closed on every site. Every pop
+         * is bounds-checked and a truncated stream fails closed (reports an
+         * overlap). r_info/r_addend are consumed to stay in sync; only the
+         * target offsets are needed here. */
+        bool android_rela_overlaps(const std::uint8_t *data, std::size_t size,
+                                   const ElfRange &table, std::uint64_t vaddr,
+                                   std::uint64_t length) noexcept {
+            if (!within(table.file_offset, table.size, size)) {
+                return true;
+            }
+            const std::uint8_t *p = data + static_cast<std::size_t>(table.file_offset);
+            const std::uint8_t *const end = p + table.size;
+            if (table.size < 4U || std::memcmp(p, "APS2", 4U) != 0) {
+                return true;
+            }
+            p += 4U;
+            bool ok = true;
+            const auto pop = [&p, end, &ok]() noexcept -> std::uint64_t {
+                std::uint64_t value = 0U;
+                unsigned shift = 0U;
+                std::uint8_t byte = 0U;
+                do {
+                    if (p >= end) {
+                        ok = false;
+                        return value;
+                    }
+                    byte = *p++;
+                    value |= static_cast<std::uint64_t>(byte & 127U) << shift;
+                    shift += 7U;
+                } while (byte >= 128U);
+                if (shift < 64U && (byte & 64U) != 0U) {
+                    value |= ~std::uint64_t{0} << shift;
+                }
+                return value;
+            };
+            const std::uint64_t count = pop();
+            std::uint64_t r_offset = pop();
+            for (std::uint64_t done = 0U; ok && done < count;) {
+                const std::uint64_t group_size = pop();
+                const std::uint64_t group_flags = pop();
+                if (!ok || group_size == 0U) {
+                    return true;
+                }
+                std::uint64_t delta = 0U;
+                if ((group_flags & 2U) != 0U) {
+                    delta = pop();
+                }
+                if ((group_flags & 1U) != 0U) {
+                    (void)pop();
+                }
+                const std::uint64_t addend_mode = group_flags & 12U;
+                if (addend_mode == 12U) {
+                    (void)pop();
+                }
+                for (std::uint64_t i = 0U; ok && i < group_size; ++i) {
+                    if ((group_flags & 2U) != 0U) {
+                        r_offset += delta;
+                    } else {
+                        r_offset += pop();
+                    }
+                    if ((group_flags & 1U) == 0U) {
+                        (void)pop();
+                    }
+                    if (addend_mode == 8U) {
+                        (void)pop();
+                    }
+                    if (ok && ranges_overlap(vaddr, length, r_offset, 8U)) {
+                        return true;
+                
+                    }
+                }
+                done += group_size;
+            }
+            return !ok;
+        }
+        
         /* A relocation target is treated as an 8-byte window (an ADRP/LDST pair
          * can rewrite the instruction word). A malformed .rela table fails
          * closed: the site is reported as relocated. */
