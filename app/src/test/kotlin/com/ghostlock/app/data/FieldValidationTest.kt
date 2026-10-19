@@ -32,6 +32,7 @@ class FieldValidationTest {
                 "$section.execution.wait_timeout_ms",
                 "$section.execution.module_poll_attempts",
                 "$section.execution.module_poll_interval_ms",
+                "$section.execution.selinux_exec_context",
             ),
             Cve2026_43284Fields.UInt32Paths,
         )
