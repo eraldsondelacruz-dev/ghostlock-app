@@ -55,7 +55,11 @@ namespace ghostlock::backend::cve_2026_43284::steps {
      * is lost, and ChainWorkspace::journal_overflow reports it. Regions that
      * cannot be rolled back (for example the large .ko image) set
      * PatchRegion::rollback = false and never consume the journal. */
-    inline constexpr std::size_t kChainRollbackBlocks = 128U;
+        inline constexpr std::size_t kChainRollbackBlocks = 128U;
+    /* Bounded retry budget for one block's write+verify: the in-place ESP
+     * transform can lag a fast read-back, so a mismatching block is rewritten
+     * and re-read before it fails closed. */
+    inline constexpr std::uint32_t kChainVerifyAttempts = 16U;
     /* Upstream libcxx.S copies the vendor target path into a 64-byte buffer. */
     inline constexpr std::size_t kCarrierPathMaxBytes = 64U;
 
