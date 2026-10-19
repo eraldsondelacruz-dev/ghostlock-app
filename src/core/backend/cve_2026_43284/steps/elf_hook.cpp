@@ -287,6 +287,7 @@ namespace ghostlock::backend::cve_2026_43284::steps {
                 return true;
             }
             const ElfRange tables[2] = {image.rela_dyn, image.rela_plt};
+            const bool present[2] = {image.has_rela_dyn, image.has_rela_plt};
             for (std::size_t t = 0U; t < 2U; ++t) {
                 if (!present[t]) {
                     continue;
