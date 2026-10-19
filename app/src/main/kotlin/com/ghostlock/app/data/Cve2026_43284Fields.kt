@@ -38,6 +38,7 @@ internal object Cve2026_43284Fields {
         "$Section.execution.wait_timeout_ms",
         "$Section.execution.module_poll_attempts",
         "$Section.execution.module_poll_interval_ms",
+        "$Section.execution.selinux_exec_context",
     )
 
     /** Every 43284 field the advanced editor surfaces for a 43284 selection. */
