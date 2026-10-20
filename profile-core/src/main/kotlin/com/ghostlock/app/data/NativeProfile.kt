@@ -518,7 +518,7 @@ data class NativeProfileDocument(
                 fun textAt(path: String): String? =
                     text("backend.cve_2026_43284.$path")?.takeIf { it.isNotEmpty() }
                 fun valueAt(path: String): Long? =
-                    value("backend.cve_2026_43284.$path")
+                    value("backend.cve_2026_43284.execution.$path")
                 Cve2026_43284Config(
 
 
